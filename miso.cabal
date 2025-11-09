@@ -194,3 +194,8 @@ library
     mtl           < 2.4,
     text          < 2.2,
     stm >= 2.4 && < 2.6
+
+executable child-component-styles-scripts-unmount-bug
+  build-depends: base, miso
+  main-is: Main.hs
+  hs-source-dirs: child-component-styles-scripts-unmount-bug
