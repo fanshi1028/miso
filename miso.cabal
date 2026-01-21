@@ -186,6 +186,14 @@ library
   else
     hs-source-dirs:
       ffi/ghc
+    build-depends:
+      jsaddle,
+      jsaddle-warp < 0.10,
+      wai-middleware-static < 0.10,
+      wai < 3.3,
+      warp < 3.5,
+      websockets < 0.14
+
 
   if flag (template-haskell) && !impl(ghcjs)
     exposed-modules:

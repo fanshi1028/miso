@@ -20,6 +20,19 @@ module Miso.Run
 -----------------------------------------------------------------------------
 import           Miso.String
 import           Miso.DSL
+#if !defined(WASM) && !GHCJS_BOTH
+import           Data.Maybe
+import           System.Environment
+import           Text.Read
+import           Language.Javascript.JSaddle hiding (jsg, (!))
+import qualified Language.Javascript.JSaddle.Warp as J
+import           Network.Wai.Middleware.Static (static)
+import           Network.Wai.Handler.Warp (defaultSettings, setTimeout, setPort, runSettings)
+import           Network.WebSockets (defaultConnectionOptions)
+import           Language.Javascript.JSaddle.WebSockets (debugWrapper, jsaddleOr, jsaddleAppWithJs, jsaddleJs)
+import           Control.Monad.IO.Class
+import           Control.Concurrent.MVar
+#endif
 -----------------------------------------------------------------------------
 -- | Entry point for a miso application.
 --
@@ -27,7 +40,34 @@ run
   :: IO ()
   -- ^ An t'IO' action typically created using 'Miso.miso' or 'Miso.startApp'
   -> IO ()
+#if !defined(WASM) && !GHCJS_BOTH
+run action = do
+  port <- fromMaybe 8008 . (readMaybe =<<) <$> lookupEnv "PORT"
+  isGhci <- (== "<interactive>") <$> getProgName
+  putStrLn $ "Running on port " <> show port <> "..."
+  if isGhci
+    then do
+  -- | Start or restart the server, with a static Middleware policy.
+  --
+  -- dmj: This is like @debug@ from `jsaddle-warp`, except it uses a static
+  -- middleware for static file hosting.
+  --
+  -- This means that usage of `url('mario.png')` will "just work" when developing
+  -- from GHCi.
+  --
+      debugWrapper $ \withRefresh registerContext ->
+        runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
+          jsaddleOr
+            defaultConnectionOptions
+            (registerContext >> askJSM >>= liftIO . putMVar currentJSContext >> liftIO action >> syncPoint)
+            (static $ withRefresh $ jsaddleAppWithJs $ jsaddleJs True)
+    else
+      runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
+        jsaddleOr defaultConnectionOptions (liftIO action >> syncPoint)
+        (static J.jsaddleApp)
+#else
 run = id
+#endif
 -----------------------------------------------------------------------------
 -- | Like 'run', but clears the <body> and <head> on each reload.
 --

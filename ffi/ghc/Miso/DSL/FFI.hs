@@ -1,181 +1,244 @@
 -----------------------------------------------------------------------------
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
+-----------------------------------------------------------------------------
 module Miso.DSL.FFI where
 -----------------------------------------------------------------------------
 import           Data.Text (Text, pack, unpack)
 import           Text.Read (readMaybe)
+#if !defined(WASM) && !GHCJS_BOTH
+import           Language.Javascript.JSaddle as J
+import           qualified JavaScript.Array as J (write, read)
+import           Control.Monad.IO.Class
+import           Control.Concurrent.MVar
+import           System.IO.Unsafe
+import           Control.Monad
+#endif
 -----------------------------------------------------------------------------
--- | A type that represents any JS value
-data JSVal = JSVal
------------------------------------------------------------------------------
-instance Eq JSVal where
-  JSVal == JSVal = True
+#if !defined(WASM) && !GHCJS_BOTH
+currentJSContext :: MVar JSContextRef
+currentJSContext = unsafePerformIO $ newEmptyMVar
+
+runJSM0 :: JSM a -> IO a
+runJSM0 f = readMVar currentJSContext >>= runJSM f
+
+runJSM1 :: (a -> JSM b) -> a -> IO b
+runJSM1 f a = readMVar currentJSContext >>= runJSM (f a)
+
+runJSM2 :: (a -> b -> JSM c) -> a -> b -> IO c
+runJSM2 f a b = readMVar currentJSContext >>= runJSM (f a b)
+
+runJSM3 :: (a -> b -> c -> JSM d) -> a -> b -> c -> IO d
+runJSM3 f a b c = readMVar currentJSContext >>= runJSM (f a b c)
+#endif
 -----------------------------------------------------------------------------
 toJSVal_Bool :: Bool -> IO JSVal
-toJSVal_Bool = undefined
+toJSVal_Bool = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 toJSVal_Double :: Double -> IO JSVal
-toJSVal_Double = undefined
+toJSVal_Double = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 toJSVal_Int :: Int -> IO JSVal
-toJSVal_Int = undefined
+toJSVal_Int = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 toJSVal_List :: [JSVal] -> IO JSVal
-toJSVal_List = undefined
+toJSVal_List = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 -- | The 'null' value in JS.
 jsNull :: JSVal
-jsNull = JSVal
+jsNull = J.jsNull
 -----------------------------------------------------------------------------
 toJSVal_JSVal :: JSVal -> IO JSVal
-toJSVal_JSVal = undefined
+toJSVal_JSVal = pure
 -----------------------------------------------------------------------------
 toJSVal_Char :: Char -> IO JSVal
-toJSVal_Char = undefined
+toJSVal_Char = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 toJSVal_Float :: Float -> IO JSVal
-toJSVal_Float = undefined
+toJSVal_Float = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 toJSVal_Text :: Text -> IO JSVal
-toJSVal_Text = undefined
+toJSVal_Text = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 fromJSVal_Text :: JSVal -> IO (Maybe Text)
-fromJSVal_Text = undefined
+fromJSVal_Text = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Text :: JSVal -> IO Text
-fromJSValUnchecked_Text = undefined
+fromJSValUnchecked_Text = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 fromJSVal_Char :: JSVal -> IO (Maybe Char)
-fromJSVal_Char = undefined
+fromJSVal_Char = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Char :: JSVal -> IO Char
-fromJSValUnchecked_Char = undefined
+fromJSValUnchecked_Char = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 fromJSVal_Float :: JSVal -> IO (Maybe Float)
-fromJSVal_Float = undefined
+fromJSVal_Float = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Float :: JSVal -> IO Float
-fromJSValUnchecked_Float = undefined
+fromJSValUnchecked_Float = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 fromJSVal_Bool :: JSVal -> IO (Maybe Bool)
-fromJSVal_Bool = undefined
+fromJSVal_Bool = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 new_ffi :: JSVal -> JSVal -> IO JSVal
-new_ffi = undefined
+new_ffi = runJSM2 new
 -----------------------------------------------------------------------------
 eval_ffi :: Text -> IO JSVal
-eval_ffi = undefined
+eval_ffi = runJSM1 eval
 -----------------------------------------------------------------------------
 create_ffi :: IO JSVal
-create_ffi = undefined
+create_ffi = runJSM0 $ obj >>= toJSVal
 -----------------------------------------------------------------------------
 getProp_ffi :: Text -> JSVal -> IO JSVal
-getProp_ffi = undefined
+getProp_ffi k obj' = runJSM2 getProp (toJSString k) $ Object obj'
 -----------------------------------------------------------------------------
 setProp_ffi :: Text -> JSVal -> JSVal -> IO ()
-setProp_ffi = undefined
------------------------------------------------------------------------------
-setField_ffi :: JSVal -> Text -> JSVal -> IO ()
-setField_ffi = undefined
+setProp_ffi k v obj' = runJSM3 setProp (toJSString k) v $ Object obj'
 -----------------------------------------------------------------------------
 fromJSVal_Int :: JSVal -> IO (Maybe Int)
-fromJSVal_Int = undefined
+fromJSVal_Int = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 fromJSVal_Double :: JSVal -> IO (Maybe Double)
-fromJSVal_Double  = undefined
+fromJSVal_Double  = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 getPropIndex_ffi :: Int -> JSVal -> IO JSVal
-getPropIndex_ffi  = undefined
+getPropIndex_ffi i array' =  runJSM2 J.read i $ SomeJSArray array'
 -----------------------------------------------------------------------------
 isNull_ffi :: JSVal -> Bool
-isNull_ffi = undefined
+isNull_ffi = unsafePerformIO . runJSM1 (ghcjsPure . isNull)
 -----------------------------------------------------------------------------
 isUndefined_ffi :: JSVal -> Bool
-isUndefined_ffi = undefined
+isUndefined_ffi = unsafePerformIO . runJSM1 (ghcjsPure . isUndefined)
 -----------------------------------------------------------------------------
 freeFunction_ffi :: JSVal -> IO ()
-freeFunction_ffi = undefined
+freeFunction_ffi = runJSM1 (freeFunction . Function . Object)
 -----------------------------------------------------------------------------
 requestAnimationFrame :: JSVal -> IO Int
-requestAnimationFrame = undefined
+requestAnimationFrame = runJSM1 $ jsg1 "requestAnimationFrame" >=> fromJSValUnchecked
 -----------------------------------------------------------------------------
 cancelAnimationFrame :: Int -> IO ()
-cancelAnimationFrame = undefined
+cancelAnimationFrame =  runJSM1 $ jsg1 "cancelAnimationFrame" >=> fromJSValUnchecked
 -----------------------------------------------------------------------------
 toJSVal_JSString :: Text -> IO JSVal
-toJSVal_JSString = undefined
+toJSVal_JSString = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Maybe :: JSVal -> IO (Maybe JSVal)
-fromJSValUnchecked_Maybe = undefined
+fromJSValUnchecked_Maybe = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 fromJSVal_Maybe :: JSVal -> IO (Maybe (Maybe JSVal))
-fromJSVal_Maybe = undefined
+fromJSVal_Maybe = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Bool :: JSVal -> IO Bool
-fromJSValUnchecked_Bool = undefined
+fromJSValUnchecked_Bool = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 invokeFunction :: JSVal -> JSVal -> JSVal -> IO JSVal
-invokeFunction = undefined
+invokeFunction f obj' args = runJSM3 call f obj' args
 -----------------------------------------------------------------------------
 listProps_ffi :: JSVal -> IO JSVal
-listProps_ffi = undefined
+listProps_ffi = runJSM1 $ listProps . Object >=> toJSVal
 -----------------------------------------------------------------------------
 setPropIndex_ffi :: Int -> JSVal -> JSVal -> IO ()
-setPropIndex_ffi = undefined
+setPropIndex_ffi i v array' = runJSM3 J.write i v $ SomeJSArray array'
 -----------------------------------------------------------------------------
 -- | The @globalThis@ object in JS.
 global :: JSVal
-global = undefined
+global = unsafePerformIO $ runJSM1 toJSVal J.global
 -----------------------------------------------------------------------------
 fromJSVal_List :: JSVal -> IO (Maybe [JSVal])
-fromJSVal_List = undefined
+fromJSVal_List = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Int :: JSVal -> IO Int
-fromJSValUnchecked_Int = undefined
+fromJSValUnchecked_Int = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Double :: JSVal -> IO Double
-fromJSValUnchecked_Double = undefined
+fromJSValUnchecked_Double = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 fromJSVal_JSString :: JSVal -> IO (Maybe Text)
-fromJSVal_JSString = undefined
+fromJSVal_JSString = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 -- | A asynchronous callback
 asyncCallback :: IO () -> IO JSVal
-asyncCallback = undefined
+asyncCallback f = runJSM0 $ asyncFunction ( \_ _ _ -> liftIO f) >>= toJSVal
 -- | A asynchronous callback with one argument
 asyncCallback1 :: (JSVal -> IO ()) -> IO JSVal
-asyncCallback1 = undefined
+asyncCallback1 f =
+  runJSM0 $
+    asyncFunction
+      ( \_ _ -> \case
+          a : _ -> liftIO $ f a
+          _ -> undefined
+      )
+      >>= toJSVal
 -- | A asynchronous callback with two arguments
 asyncCallback2 :: (JSVal -> JSVal -> IO ()) -> IO JSVal
-asyncCallback2 = undefined
+asyncCallback2 f =
+  runJSM0 $
+    asyncFunction
+      ( \_ _ -> \case
+          a : b : _ -> liftIO $ f a b
+          _ -> undefined
+      )
+      >>= toJSVal
 -- | A asynchronous callback with three arguments
 asyncCallback3 :: (JSVal -> JSVal -> JSVal -> IO ()) -> IO JSVal
-asyncCallback3 = undefined
+asyncCallback3 f =
+  runJSM0 $
+    asyncFunction
+      ( \_ _ -> \case
+          a : b : c : _ -> liftIO $ f a b c
+          _ -> undefined
+      )
+      >>= toJSVal
+
 -----------------------------------------------------------------------------
 -- | A synchronous callback
 syncCallback :: IO () -> IO JSVal
-syncCallback = undefined
+syncCallback f = runJSM0 $ function (\_ _ _ -> liftIO f) >>= toJSVal
+
 -- | A synchronous callback with a single argument
 syncCallback1 :: (JSVal -> IO ()) -> IO JSVal
-syncCallback1 = undefined
+syncCallback1 f =
+  runJSM0 $
+    function
+      ( \_ _ -> \case
+          a : _ -> liftIO $ f a
+          _ -> undefined
+      )
+      >>= toJSVal
 -- | A synchronous callback with two arguments
 syncCallback2 :: (JSVal -> JSVal -> IO ()) -> IO JSVal
-syncCallback2 = undefined
+syncCallback2 f =
+  runJSM0 $
+    function
+      ( \_ _ -> \case
+          a : b : _ -> liftIO $ f a b
+          _ -> undefined
+      )
+      >>= toJSVal
 -- | A synchronous callback with three arguments
 syncCallback3 :: (JSVal -> JSVal -> JSVal -> IO ()) -> IO JSVal
-syncCallback3 = undefined
+syncCallback3 f =
+  runJSM0 $
+    function
+      ( \_ _ -> \case
+          a : b : c : _ -> liftIO $ f a b c
+          _ -> undefined
+      )
+      >>= toJSVal
 -----------------------------------------------------------------------------
 -- | A synchronous callback that returns a value
 syncCallback' :: IO JSVal -> IO JSVal
-syncCallback' = undefined
+syncCallback' f = syncCallback $ () <$ f
 -- | A synchronous callback that takes a single argument and returns a value
 syncCallback1' :: (JSVal -> IO JSVal) -> IO JSVal
-syncCallback1' = undefined
+syncCallback1' f = syncCallback1 $ \a -> () <$ f a
 -- | A synchronous callback that takes two arguments and returns a value
 syncCallback2' :: (JSVal -> JSVal -> IO JSVal) -> IO JSVal
-syncCallback2' = undefined
+syncCallback2' f = syncCallback2 $ \a b -> () <$ f a b
 -- | A synchronous callback that takes three arguments and returns a value
 syncCallback3' :: (JSVal -> JSVal -> JSVal -> IO JSVal) -> IO JSVal
-syncCallback3' = undefined
+syncCallback3' f = syncCallback3 $ \a b c -> () <$ f a b c
 -----------------------------------------------------------------------------
 parseInt :: Text -> Maybe Int
 parseInt = readMaybe . unpack
