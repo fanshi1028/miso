@@ -76,7 +76,7 @@ module Miso.Runtime
   , components
   , componentIds
   , rootComponentId
-#ifdef WASM
+#if defined(WASM) || defined(VANILLA)
   , evalFile
 #endif
   ) where
@@ -96,7 +96,7 @@ import qualified Data.IntMap.Strict as IM
 import qualified Data.Sequence as S
 import           Data.Sequence (Seq)
 import           GHC.Conc (ThreadStatus(ThreadDied, ThreadFinished), threadStatus)
-#ifdef WASM
+#if defined(WASM) || defined(VANILLA)
 import qualified Language.Haskell.TH as TH
 #endif
 import           Prelude hiding (null)
@@ -109,7 +109,7 @@ import           Text.Printf
 import           Miso.Concurrent (Waiter(..), waiter, Mailbox, copyMailbox, readMail, sendMail, newMailbox)
 import           Miso.Delegate (delegator)
 import           Miso.DSL
-#ifdef WASM
+#if defined(WASM) || defined(VANILLA)
 import           Miso.DSL.TH
 #endif
 import qualified Miso.Diff as Diff
@@ -1640,7 +1640,7 @@ blob = BLOB
 arrayBuffer :: ArrayBuffer -> Payload value
 arrayBuffer = BUFFER
 -----------------------------------------------------------------------------
-#ifdef WASM
+#if defined(WASM) || defined(VANILLA)
 -----------------------------------------------------------------------------
 -- | Like 'eval', but read the JS code to evaluate from a file.
 evalFile :: FilePath -> TH.Q TH.Exp

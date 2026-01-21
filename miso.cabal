@@ -59,6 +59,9 @@ common client
     else
       js-sources:
         js/miso.js
+  else
+    js-sources:
+      js/miso.js
 
 flag benchmark
   manual:

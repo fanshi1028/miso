@@ -51,7 +51,7 @@ module Miso
   , sync
   , sync_
   , for
-#ifdef WASM || defined(VANILLA)
+#if defined(WASM) || defined(VANILLA)
   -- ** JS file embedding
   , evalFile
 #endif
