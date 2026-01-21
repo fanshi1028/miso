@@ -41,7 +41,7 @@ run
   :: IO ()
   -- ^ An t'IO' action typically created using 'Miso.miso' or 'Miso.startApp'
   -> IO ()
-#if !defined(WASM) && !GHCJS_BOTH
+#ifdef VANILLA
 run action = do
   port <- fromMaybe 8008 . (readMaybe =<<) <$> lookupEnv "PORT"
   isGhci <- (== "<interactive>") <$> getProgName

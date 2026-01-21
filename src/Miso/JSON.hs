@@ -100,8 +100,10 @@ import           System.IO.Unsafe (unsafePerformIO)
 import           Miso.DSL.FFI
 import           Miso.String (MisoString, ms, singleton)
 ----------------------------------------------------------------------------
-#ifndef VANILLA
 import Control.Monad.Trans.Maybe
+----------------------------------------------------------------------------
+#ifdef VANILLA
+import Data.Maybe
 #endif
 ----------------------------------------------------------------------------
 (.=) :: ToJSON v => MisoString -> v -> Pair
@@ -442,20 +444,21 @@ foreign import javascript unsafe
 #endif
 -----------------------------------------------------------------------------
 #ifdef VANILLA
-encodePretty' :: ToJSON a => Config -> a -> MisoString
-encodePretty' = undefined
------------------------------------------------------------------------------
-encodePretty :: ToJSON a => a -> MisoString
-encodePretty _ = undefined
------------------------------------------------------------------------------
-#else
+encodePretty_ffi :: JSVal -> Int -> IO MisoString
+encodePretty_ffi a b = do
+  b' <- toJSVal_Int b
+  str <- join $ invokeFunction
+    <$> toJSVal_JSString "Stringify"
+    <*> getProp_ffi "JSON" global
+    <*> toJSVal_List [ a, jsNull,  b' ]
+  fromJust <$> fromJSVal_JSString str
+#endif
 -----------------------------------------------------------------------------
 encodePretty' :: ToJSON a => Config -> a -> MisoString
 encodePretty' (Config s) x = unsafePerformIO (flip encodePretty_ffi s =<< toJSVal_Value (toJSON x))
 -----------------------------------------------------------------------------
 encodePretty :: ToJSON a => a -> MisoString
 encodePretty = encodePretty' defConfig
-#endif
 -----------------------------------------------------------------------------
 newtype Config
   = Config
@@ -485,7 +488,12 @@ foreign import javascript unsafe
 -----------------------------------------------------------------------------
 #ifdef VANILLA
 jsonStringify :: JSVal -> IO MisoString
-jsonStringify _ = undefined
+jsonStringify v = do
+  str <- join $ invokeFunction
+    <$> toJSVal_JSString "stringify"
+    <*> getProp_ffi "JSON" global
+    <*> pure v
+  fromJust <$> fromJSVal_JSString str
 #endif
 -----------------------------------------------------------------------------
 #ifdef GHCJS_OLD
@@ -508,7 +516,11 @@ foreign import javascript unsafe
 -----------------------------------------------------------------------------
 #ifdef VANILLA
 jsonParse :: MisoString -> IO JSVal
-jsonParse _ = undefined
+jsonParse str =
+  join $ invokeFunction
+    <$> toJSVal_JSString "parse"
+    <*> getProp_ffi "JSON" global
+    <*> toJSVal_JSString str
 #endif
 -----------------------------------------------------------------------------
 eitherDecode :: FromJSON a => MisoString -> Either MisoString a
@@ -624,13 +636,30 @@ fromJSVal_Value jsval = do
 #endif
 -----------------------------------------------------------------------------
 #ifdef VANILLA
------------------------------------------------------------------------------
 fromJSVal_Value :: JSVal -> IO (Maybe Value)
-fromJSVal_Value = undefined
------------------------------------------------------------------------------
-toJSVal_Value :: Value -> IO JSVal
-toJSVal_Value = undefined
------------------------------------------------------------------------------
+fromJSVal_Value jsval = do
+  typeof jsval >>= \case
+    0 -> return (Just Null)
+    1 -> Just . Number <$> fromJSValUnchecked_Double jsval
+    2 -> Just . String <$> fromJSValUnchecked_Text jsval
+    3 -> fromJSValUnchecked_Int jsval >>= \case
+      0 -> pure $ Just (Bool False)
+      1 -> pure $ Just (Bool True)
+      _ -> pure Nothing
+    4 -> do xs <- fromJust <$> fromJSVal_List jsval
+            values <- forM xs fromJSVal_Value
+            pure (Array <$> sequence values)
+    5 -> do keys <- fromJust <$> (fromJSVal_List =<< listProps_ffi jsval)
+            result <-
+              runMaybeT $ forM keys $ \k -> do
+                key <- MaybeT $ fromJSVal_JSString k
+                raw <- MaybeT $ Just <$> getProp_ffi key jsval
+                value <- MaybeT (fromJSVal_Value raw)
+                pure (key, value)
+            pure (toObject <$> result)
+    _ -> error "fromJSVal_Value: Unknown JSON type"
+  where
+    toObject = Object . M.fromList
 #endif
 -----------------------------------------------------------------------------
 #ifdef GHCJS_NEW
@@ -651,7 +680,17 @@ foreign import javascript unsafe
   typeof :: JSVal -> IO Int
 #endif
 -----------------------------------------------------------------------------
-#ifdef WASM
+#ifdef VANILLA
+typeof :: JSVal -> IO Int
+typeof v = do
+  int <- join $ invokeFunction
+    <$> toJSVal_JSString "typeOf"
+    <*> (getProp_ffi "globalThis" global >>= getProp_ffi "miso")
+    <*> pure v
+  fromJSValUnchecked_Int int
+#endif
+-----------------------------------------------------------------------------
+#if defined(WASM) || defined(VANILLA)
 toJSVal_Value :: Value -> IO JSVal
 toJSVal_Value = \case
   Null ->
