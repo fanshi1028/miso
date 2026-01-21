@@ -145,7 +145,7 @@ setPropIndex_ffi i v array' = runJSM3 J.write i v $ SomeJSArray array'
 -----------------------------------------------------------------------------
 -- | The @globalThis@ object in JS.
 global :: JSVal
-global = unsafePerformIO $ runJSM1 toJSVal J.global
+global = let Object g = J.global in g
 -----------------------------------------------------------------------------
 fromJSVal_List :: JSVal -> IO (Maybe [JSVal])
 fromJSVal_List = runJSM1 fromJSVal
