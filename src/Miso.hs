@@ -51,7 +51,7 @@ module Miso
   , sync
   , sync_
   , for
-#ifdef WASM
+#ifdef WASM || defined(VANILLA)
   -- ** JS file embedding
   , evalFile
 #endif
@@ -198,7 +198,7 @@ isRoot = True
 #endif
 withJS :: IO a -> IO ()
 withJS action = void $ do
-#ifdef WASM
+#if defined(WASM) || defined(VANILLA)
   $(evalFile MISO_JS_PATH)
 #endif
   action
