@@ -190,6 +190,7 @@ library
     hs-source-dirs:
       ffi/ghc
     build-depends:
+      file-embed < 0.1,
       jsaddle,
       jsaddle-warp < 0.10,
       wai-middleware-static < 0.10,

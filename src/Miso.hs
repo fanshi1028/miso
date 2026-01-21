@@ -51,7 +51,7 @@ module Miso
   , sync
   , sync_
   , for
-#if defined(WASM) || defined(VANILLA)
+#ifdef WASM
   -- ** JS file embedding
   , evalFile
 #endif
@@ -119,6 +119,9 @@ import           Miso.Storage
 import           Miso.Subscription
 import           Miso.Types
 import           Miso.Util
+#ifdef VANILLA
+import           Data.FileEmbed (embedStringFile)
+#endif
 ----------------------------------------------------------------------------
 -- | Runs an isomorphic @miso@ application.
 -- Assumes the pre-rendered DOM is already present.
@@ -198,8 +201,11 @@ isRoot = True
 #endif
 withJS :: IO a -> IO ()
 withJS action = void $ do
-#if defined(WASM) || defined(VANILLA)
+#ifdef WASM
   $(evalFile MISO_JS_PATH)
+#endif
+#ifdef VANILLA
+  _ <- eval ($(embedStringFile MISO_JS_PATH) :: MisoString)
 #endif
   action
 -----------------------------------------------------------------------------
