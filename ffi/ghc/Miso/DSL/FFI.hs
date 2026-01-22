@@ -94,10 +94,10 @@ create_ffi :: IO JSVal
 create_ffi = runJSM0 $ obj >>= toJSVal
 -----------------------------------------------------------------------------
 getProp_ffi :: Text -> JSVal -> IO JSVal
-getProp_ffi k obj' = runJSM2 getProp (toJSString k) $ Object obj'
+getProp_ffi k obj' = runJSM0 $ valToObject obj' >>= getProp (toJSString k)
 -----------------------------------------------------------------------------
 setProp_ffi :: Text -> JSVal -> JSVal -> IO ()
-setProp_ffi k v obj' = runJSM3 setProp (toJSString k) v $ Object obj'
+setProp_ffi k v obj' = runJSM0 $ valToObject obj' >>= setProp (toJSString k) v
 -----------------------------------------------------------------------------
 fromJSVal_Int :: JSVal -> IO (Maybe Int)
 fromJSVal_Int = runJSM1 fromJSVal
@@ -115,7 +115,7 @@ isUndefined_ffi :: JSVal -> Bool
 isUndefined_ffi = unsafePerformIO . runJSM1 (ghcjsPure . isUndefined)
 -----------------------------------------------------------------------------
 freeFunction_ffi :: JSVal -> IO ()
-freeFunction_ffi = runJSM1 (freeFunction . Function . Object)
+freeFunction_ffi = runJSM1 $ valToObject >=> freeFunction . Function
 -----------------------------------------------------------------------------
 requestAnimationFrame :: JSVal -> IO Int
 requestAnimationFrame = runJSM1 $ jsg1 "requestAnimationFrame" >=> fromJSValUnchecked
@@ -139,7 +139,7 @@ invokeFunction :: JSVal -> JSVal -> JSVal -> IO JSVal
 invokeFunction f obj' args = runJSM0 $ fromJSValUncheckedListOf @JSVal args >>= call f obj'
 -----------------------------------------------------------------------------
 listProps_ffi :: JSVal -> IO JSVal
-listProps_ffi = runJSM1 $ listProps . Object >=> toJSVal
+listProps_ffi = runJSM1 $ valToObject >=> listProps >=> toJSVal
 -----------------------------------------------------------------------------
 setPropIndex_ffi :: Int -> JSVal -> JSVal -> IO ()
 setPropIndex_ffi i v array' = runJSM3 J.write i v $ SomeJSArray array'
