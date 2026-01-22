@@ -85,7 +85,7 @@ fromJSVal_Bool :: JSVal -> IO (Maybe Bool)
 fromJSVal_Bool = runJSM1 fromJSVal
 -----------------------------------------------------------------------------
 new_ffi :: JSVal -> JSVal -> IO JSVal
-new_ffi = runJSM2 new
+new_ffi constr args = runJSM0 $ fromJSValUncheckedListOf @JSVal args >>= new constr
 -----------------------------------------------------------------------------
 eval_ffi :: Text -> IO JSVal
 eval_ffi = runJSM1 eval
