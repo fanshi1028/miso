@@ -25,6 +25,7 @@ import           Data.Maybe
 import           System.Environment
 import           Text.Read
 import           Language.Javascript.JSaddle hiding (jsg, (!))
+import           Language.Javascript.JSaddle.Run
 import qualified Language.Javascript.JSaddle.Warp as J
 import           Network.Wai.Middleware.Static (static)
 import           Network.Wai.Handler.Warp (defaultSettings, setTimeout, setPort, runSettings)
@@ -60,7 +61,7 @@ run action = do
         runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
           jsaddleOr
             defaultConnectionOptions
-            (registerContext >> askJSM >>= liftIO . putMVar currentJSContext >> liftIO action >> syncPoint)
+            (registerContext >> enableLogging True >> askJSM >>= liftIO . putMVar currentJSContext >> liftIO action >> syncPoint)
             (static $ withRefresh $ jsaddleAppWithJs $ jsaddleJs True)
     else
       runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
