@@ -61,7 +61,7 @@ run action = do
         runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
           jsaddleOr
             defaultConnectionOptions
-            (registerContext >> enableLogging True >> askJSM >>= liftIO . putMVar currentJSContext >> liftIO action >> syncPoint)
+            (registerContext >> enableLogging True >> liftIO (tryTakeMVar currentJSContext) >> askJSM >>= liftIO . putMVar currentJSContext >> liftIO action >> syncPoint)
             (static $ withRefresh $ jsaddleAppWithJs $ jsaddleJs True)
     else
       runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
