@@ -1,6 +1,7 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeApplications #-}
 -----------------------------------------------------------------------------
 module Miso.DSL.FFI where
 -----------------------------------------------------------------------------
@@ -135,7 +136,7 @@ fromJSValUnchecked_Bool :: JSVal -> IO Bool
 fromJSValUnchecked_Bool = runJSM1 fromJSValUnchecked
 -----------------------------------------------------------------------------
 invokeFunction :: JSVal -> JSVal -> JSVal -> IO JSVal
-invokeFunction f obj' args = runJSM3 call f obj' args
+invokeFunction f obj' args = runJSM0 $ fromJSValUncheckedListOf @JSVal args >>= call f obj'
 -----------------------------------------------------------------------------
 listProps_ffi :: JSVal -> IO JSVal
 listProps_ffi = runJSM1 $ listProps . Object >=> toJSVal
