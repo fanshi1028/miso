@@ -44,7 +44,7 @@ toJSVal_Int :: Int -> IO JSVal
 toJSVal_Int = runJSM1 toJSVal
 -----------------------------------------------------------------------------
 toJSVal_List :: [JSVal] -> IO JSVal
-toJSVal_List = runJSM1 toJSVal
+toJSVal_List = runJSM1 toJSValListOf
 -----------------------------------------------------------------------------
 -- | The 'null' value in JS.
 jsNull :: JSVal
@@ -148,7 +148,7 @@ global :: JSVal
 global = let Object g = J.global in g
 -----------------------------------------------------------------------------
 fromJSVal_List :: JSVal -> IO (Maybe [JSVal])
-fromJSVal_List = runJSM1 fromJSVal
+fromJSVal_List = runJSM1 fromJSValListOf
 -----------------------------------------------------------------------------
 fromJSValUnchecked_Int :: JSVal -> IO Int
 fromJSValUnchecked_Int = runJSM1 fromJSValUnchecked
