@@ -94,10 +94,10 @@ create_ffi :: IO JSVal
 create_ffi = runJSM0 $ obj >>= toJSVal
 -----------------------------------------------------------------------------
 getProp_ffi :: Text -> JSVal -> IO JSVal
-getProp_ffi k obj' = runJSM0 $ valToObject obj' >>= getProp (toJSString k)
+getProp_ffi k obj' = runJSM0 $ getProp (toJSString k) $ Object obj'
 -----------------------------------------------------------------------------
 setProp_ffi :: Text -> JSVal -> JSVal -> IO ()
-setProp_ffi k v obj' = runJSM0 $ valToObject obj' >>= setProp (toJSString k) v
+setProp_ffi k v obj' = runJSM0 . setProp (toJSString k) v $ Object obj'
 -----------------------------------------------------------------------------
 fromJSVal_Int :: JSVal -> IO (Maybe Int)
 fromJSVal_Int = runJSM1 fromJSVal
