@@ -685,7 +685,7 @@ typeof :: JSVal -> IO Int
 typeof v = do
   int <- join $ invokeFunction
     <$> toJSVal_JSString "typeOf"
-    <*> (getProp_ffi "globalThis" global >>= getProp_ffi "miso")
+    <*> getProp_ffi "miso" global
     <*> pure v
   fromJSValUnchecked_Int int
 #endif
