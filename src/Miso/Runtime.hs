@@ -163,8 +163,8 @@ initialize events componentParentId hydrate isRoot comp@Component {..} getCompon
     subKey <- freshSubId
     atomicModifyIORef' componentSubThreads $ \m ->
       (M.insert subKey threadId m, ())
-  frame <- newEmptyMVar :: IO (MVar Double)
 #ifndef VANILLA
+  frame <- newEmptyMVar :: IO (MVar Double)
   rAFCallback <-
     asyncCallback1 $ \jsval -> do
       putMVar frame =<< fromJSValUnchecked jsval
