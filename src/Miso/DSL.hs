@@ -54,8 +54,10 @@ module Miso.DSL
   , setProp
   , getProp
   , eval
+#ifndef VANILLA
   , requestAnimationFrame
   , cancelAnimationFrame
+#endif
   , freeFunction
   , (!!)
   , isUndefined
