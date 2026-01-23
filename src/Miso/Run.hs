@@ -32,6 +32,7 @@ import           Network.WebSockets (defaultConnectionOptions)
 import           Language.Javascript.JSaddle.WebSockets (debugWrapper, jsaddleOr, jsaddleAppWithJs, jsaddleJs)
 import           Control.Monad.IO.Class
 import           Control.Concurrent.MVar
+import           Miso.DSL.FFI
 #endif
 -----------------------------------------------------------------------------
 -- | Entry point for a miso application.

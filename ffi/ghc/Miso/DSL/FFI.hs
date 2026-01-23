@@ -1,21 +1,24 @@
 -----------------------------------------------------------------------------
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 -----------------------------------------------------------------------------
 module Miso.DSL.FFI where
 -----------------------------------------------------------------------------
 import           Data.Text (Text, pack, unpack)
 import           Text.Read (readMaybe)
-#if !defined(WASM) && !GHCJS_BOTH
-import           Language.Javascript.JSaddle as J
+import           qualified Language.Javascript.JSaddle as J (JSVal, jsNull, global)
+import           Language.Javascript.JSaddle hiding (JSVal, jsNull, global)
 import           qualified JavaScript.Array as J (write, read)
 import           Control.Monad.IO.Class
 import           Control.Concurrent.MVar
 import           System.IO.Unsafe
 import           Control.Monad
-#endif
 -----------------------------------------------------------------------------
-#if !defined(WASM) && !GHCJS_BOTH
+type JSVal = J.JSVal
+-----------------------------------------------------------------------------
+instance Eq JSVal where
+  _ == _ = True
+-----------------------------------------------------------------------------
 currentJSContext :: MVar JSContextRef
 currentJSContext = unsafePerformIO $ newEmptyMVar
 
@@ -30,7 +33,6 @@ runJSM2 f a b = readMVar currentJSContext >>= runJSM (f a b)
 
 runJSM3 :: (a -> b -> c -> JSM d) -> a -> b -> c -> IO d
 runJSM3 f a b c = readMVar currentJSContext >>= runJSM (f a b c)
-#endif
 -----------------------------------------------------------------------------
 toJSVal_Bool :: Bool -> IO JSVal
 toJSVal_Bool = runJSM1 toJSVal
