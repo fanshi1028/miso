@@ -841,14 +841,15 @@ buildVTree events_ parentId vcompId hydrate snk logLevel_ = \case
         then
           toJSVal jsNull
         else
-          syncCallback1' $ \parent_ -> do
+          syncCallback2 $ \parent_ cont -> do
             ComponentState {..} <- initialize events_ vcompId Draw False app (pure parent_)
             vtree <- toJSVal =<< readIORef componentVTree
             FFI.set "parent" vcomp (Object vtree)
             obj <- create
             setProp "componentId" componentId obj
             setProp "componentTree" vtree obj
-            toJSVal obj
+            _ <- call cont global obj
+            pure ()
 
     unmountCallback <- toJSVal =<< do
       FFI.syncCallback1 $ \vcompId_ -> do

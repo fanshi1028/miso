@@ -350,22 +350,23 @@ function unmountComponent<T>(c: VComp<T>): void {
 function mountComponent<T>(parent: T, op : OP, replacing: T | null, n: VComp<T>, context: DrawingContext<T>): void {
   if (n.onBeforeMounted) n.onBeforeMounted();
   // 'mount()' should be executed synchronously, including its callback function argument.
-  let mounted: Mount<T> = n.mount(parent); 
-  // mount() gives us the VTree from the Haskell side
-  n.componentId = mounted.componentId;
-  n.child = mounted.componentTree;
-  mounted.componentTree.parent = n;
-  if (mounted.componentTree.type !== VTreeType.VComp) {
-    // Handle DOM placement for non-VComp child nodes
-    const childDomRef = getDOMRef(mounted.componentTree);
-    if (op === OP.REPLACE && replacing) {
-      context.replaceChild(parent, childDomRef, replacing);
-    } else if (op === OP.INSERT_BEFORE) {
-      context.insertBefore(parent, childDomRef, replacing);
-    }
-      // For OP.APPEND, this happens naturally in mount()
-  }
-  if (n.onMounted) n.onMounted();
+  n.mount(parent, (mounted) => {
+     // mount() gives us the VTree from the Haskell side
+     n.componentId = mounted.componentId;
+     n.child = mounted.componentTree;
+     mounted.componentTree.parent = n;
+     if (mounted.componentTree.type !== VTreeType.VComp) {
+       // Handle DOM placement for non-VComp child nodes
+       const childDomRef = getDOMRef(mounted.componentTree);
+       if (op === OP.REPLACE && replacing) {
+         context.replaceChild(parent, childDomRef, replacing);
+       } else if (op === OP.INSERT_BEFORE) {
+         context.insertBefore(parent, childDomRef, replacing);
+       }
+         // For OP.APPEND, this happens naturally in mount()
+     }
+     if (n.onMounted) n.onMounted();
+  });
 }
 
 // Creates nodes on virtual dom (vtext, vcomp, vnode)

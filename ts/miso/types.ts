@@ -37,7 +37,7 @@ export type VComp<T> = {
   onMounted: () => void;
   onBeforeUnmounted: () => void;
   onUnmounted: () => void;
-  mount: (parent: T) => Mount<T>;
+  mount: (parent: T, cb: (mounted: Mount<T>) => void) => void;
   unmount: (componentId: ComponentId) => void;
 };
 
