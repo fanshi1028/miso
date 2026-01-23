@@ -309,20 +309,21 @@ function unmountComponent(c) {
 function mountComponent(parent, op, replacing, n, context) {
   if (n.onBeforeMounted)
     n.onBeforeMounted();
-  let mounted = n.mount(parent);
-  n.componentId = mounted.componentId;
-  n.child = mounted.componentTree;
-  mounted.componentTree.parent = n;
-  if (mounted.componentTree.type !== 0 /* VComp */) {
-    const childDomRef = getDOMRef(mounted.componentTree);
-    if (op === 1 /* REPLACE */ && replacing) {
-      context.replaceChild(parent, childDomRef, replacing);
-    } else if (op === 2 /* INSERT_BEFORE */) {
-      context.insertBefore(parent, childDomRef, replacing);
+  n.mount(parent, (mounted) => {
+    n.componentId = mounted.componentId;
+    n.child = mounted.componentTree;
+    mounted.componentTree.parent = n;
+    if (mounted.componentTree.type !== 0 /* VComp */) {
+      const childDomRef = getDOMRef(mounted.componentTree);
+      if (op === 1 /* REPLACE */ && replacing) {
+        context.replaceChild(parent, childDomRef, replacing);
+      } else if (op === 2 /* INSERT_BEFORE */) {
+        context.insertBefore(parent, childDomRef, replacing);
+      }
     }
-  }
-  if (n.onMounted)
-    n.onMounted();
+    if (n.onMounted)
+      n.onMounted();
+  });
 }
 function create(n, parent, context) {
   createElement(parent, 0 /* APPEND */, null, n, context);
