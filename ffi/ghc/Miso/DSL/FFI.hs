@@ -118,12 +118,6 @@ isUndefined_ffi = unsafePerformIO . runJSM1 (ghcjsPure . isUndefined)
 freeFunction_ffi :: JSVal -> IO ()
 freeFunction_ffi = runJSM1 $ valToObject >=> freeFunction . Function
 -----------------------------------------------------------------------------
-requestAnimationFrame :: JSVal -> IO Int
-requestAnimationFrame = runJSM1 $ jsg1 "requestAnimationFrame" >=> fromJSValUnchecked
------------------------------------------------------------------------------
-cancelAnimationFrame :: Int -> IO ()
-cancelAnimationFrame =  runJSM1 $ jsg1 "cancelAnimationFrame" >=> fromJSValUnchecked
------------------------------------------------------------------------------
 toJSVal_JSString :: Text -> IO JSVal
 toJSVal_JSString = runJSM1 toJSVal
 -----------------------------------------------------------------------------
@@ -270,3 +264,6 @@ toString_Double = pack . show
 -----------------------------------------------------------------------------
 syncPoint :: IO ()
 syncPoint = runJSM0 J.syncPoint
+-----------------------------------------------------------------------------
+waitForAnimationFrame :: IO ()
+waitForAnimationFrame = () <$ runJSM0 J.waitForAnimationFrame

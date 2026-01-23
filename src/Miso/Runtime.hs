@@ -164,9 +164,11 @@ initialize events componentParentId hydrate isRoot comp@Component {..} getCompon
     atomicModifyIORef' componentSubThreads $ \m ->
       (M.insert subKey threadId m, ())
   frame <- newEmptyMVar :: IO (MVar Double)
+#ifndef VANILLA
   rAFCallback <-
     asyncCallback1 $ \jsval -> do
       putMVar frame =<< fromJSValUnchecked jsval
+#endif
   componentModel <- newTVarIO initializedModel
   let
     eventLoop = wait >> do
@@ -180,8 +182,13 @@ initialize events componentParentId hydrate isRoot comp@Component {..} getCompon
       when ((currentName /= updatedName && currentModel /= updatedModel) || isDirty) $ do
         newVTree <- buildVTree events componentParentId componentId Draw componentSink logLevel (view updatedModel)
         oldVTree <- readIORef componentVTree
+#ifdef VANILLA
+        _ <- waitForAnimationFrame
+#endif
+#ifndef VANILLA
         _frame <- requestAnimationFrame rAFCallback
         _timestamp :: Double <- takeMVar frame
+#endif
         Diff.diff (Just oldVTree) (Just newVTree) componentDOMRef
         FFI.updateRef oldVTree newVTree
         do
