@@ -112,6 +112,9 @@ import           Miso.DSL
 #ifdef WASM
 import           Miso.DSL.TH
 #endif
+#ifdef VANILLA
+import           Miso.DSL.FFI
+#endif
 import qualified Miso.Diff as Diff
 import qualified Miso.Hydrate as Hydrate
 import qualified Miso.FFI.Internal as FFI
@@ -190,6 +193,9 @@ initialize events componentParentId hydrate isRoot comp@Component {..} getCompon
             -- dmj: reset the dirty bit
             when (mounted > 1) (writeTChan componentDiffs Null)
             -- dmj: child wake-up call for model synch.
+#ifdef VANILLA
+      syncPoint
+#endif
       eventLoop
 
   -- mailbox

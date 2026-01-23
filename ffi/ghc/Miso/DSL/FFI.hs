@@ -9,6 +9,7 @@ import           Data.Text (Text, pack, unpack)
 import           Text.Read (readMaybe)
 import           qualified Language.Javascript.JSaddle as J (JSVal, jsNull, global)
 import           Language.Javascript.JSaddle hiding (JSVal, jsNull, global)
+import           Language.Javascript.JSaddle.Run as J
 import           qualified JavaScript.Array as J (write, read)
 import           Control.Monad.IO.Class
 import           Control.Concurrent.MVar
@@ -267,3 +268,5 @@ toString_Float = pack . show
 toString_Double :: Double -> Text
 toString_Double = pack . show
 -----------------------------------------------------------------------------
+syncPoint :: IO ()
+syncPoint = runJSM0 J.syncPoint
