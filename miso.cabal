@@ -192,7 +192,7 @@ library
     build-depends:
       file-embed < 0.1,
       jsaddle,
-      jsaddle-warp < 0.10,
+      jsaddle-warp,
       wai-middleware-static < 0.10,
       wai < 3.3,
       warp < 3.5,
