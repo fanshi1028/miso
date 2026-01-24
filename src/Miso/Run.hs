@@ -32,7 +32,7 @@ import           Network.Wai.Handler.Warp (defaultSettings, setTimeout, setPort,
 import           Network.WebSockets (defaultConnectionOptions)
 import           Language.Javascript.JSaddle.WebSockets (debugWrapper, jsaddleOr, jsaddleAppWithJs, jsaddleJs)
 import           Control.Monad.IO.Class
-import           Control.Concurrent.MVar
+import           Control.Concurrent.STM
 import           Miso.DSL.FFI hiding (syncPoint)
 #endif
 -----------------------------------------------------------------------------
@@ -61,7 +61,12 @@ run action = do
         runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<
           jsaddleOr
             defaultConnectionOptions
-            (registerContext >> enableLogging True >> liftIO (tryTakeMVar currentJSContext) >> askJSM >>= liftIO . putMVar currentJSContext >> liftIO action >> syncPoint)
+            (registerContext >> enableLogging True >> askJSM >>= (\jsContext -> syncAfter . liftIO $ do
+                atomically $ do
+                     _ <- tryTakeTMVar currentJSContext
+                     putTMVar currentJSContext jsContext
+                action
+                ))
             (static $ withRefresh $ jsaddleAppWithJs $ jsaddleJs True)
     else
       runSettings (setPort port (setTimeout 3600 defaultSettings)) =<<

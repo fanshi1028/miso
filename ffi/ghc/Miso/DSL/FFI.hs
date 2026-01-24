@@ -12,29 +12,29 @@ import           Language.Javascript.JSaddle hiding (JSVal, jsNull, global)
 import           Language.Javascript.JSaddle.Run as J
 import           qualified JavaScript.Array as J (write, read)
 import           Control.Monad.IO.Class
-import           Control.Concurrent.MVar
 import           System.IO.Unsafe
 import           Control.Monad
+import           Control.Concurrent.STM
 -----------------------------------------------------------------------------
 type JSVal = J.JSVal
 -----------------------------------------------------------------------------
 instance Eq JSVal where
   _ == _ = True
 -----------------------------------------------------------------------------
-currentJSContext :: MVar JSContextRef
-currentJSContext = unsafePerformIO $ newEmptyMVar
+currentJSContext :: TMVar JSContextRef
+currentJSContext = unsafePerformIO newEmptyTMVarIO
 
 runJSM0 :: JSM a -> IO a
-runJSM0 f = readMVar currentJSContext >>= runJSM f
+runJSM0 f = atomically (readTMVar currentJSContext) >>= runJSM f
 
 runJSM1 :: (a -> JSM b) -> a -> IO b
-runJSM1 f a = readMVar currentJSContext >>= runJSM (f a)
+runJSM1 f a = atomically (readTMVar currentJSContext) >>= runJSM (f a)
 
 runJSM2 :: (a -> b -> JSM c) -> a -> b -> IO c
-runJSM2 f a b = readMVar currentJSContext >>= runJSM (f a b)
+runJSM2 f a b = atomically (readTMVar currentJSContext) >>= runJSM (f a b)
 
 runJSM3 :: (a -> b -> c -> JSM d) -> a -> b -> c -> IO d
-runJSM3 f a b c = readMVar currentJSContext >>= runJSM (f a b c)
+runJSM3 f a b c = atomically (readTMVar currentJSContext) >>= runJSM (f a b c)
 -----------------------------------------------------------------------------
 toJSVal_Bool :: Bool -> IO JSVal
 toJSVal_Bool = runJSM1 toJSVal
