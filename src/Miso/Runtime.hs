@@ -130,7 +130,7 @@ import           Miso.Effect ( ComponentInfo(..), Sub, Sink, Effect, Schedule(..
 -----------------------------------------------------------------------------
 -- | Helper function to abstract out initialization of t'Miso.Types.Component' between top-level API functions.
 initialize
-  :: (Eq parent, Eq model)
+  :: (Eq parent, Eq model, Show action)
   => Events
   -> ComponentId
   -> Hydrate
@@ -250,7 +250,7 @@ initialize events componentParentId hydrate isRoot comp@Component {..} getCompon
   pure vcomp
 -----------------------------------------------------------------------------
 initialDraw
-  :: Eq m
+  :: (Eq m, Show a)
   => m
   -> Events
   -> Hydrate
@@ -742,7 +742,7 @@ evalScheduled Async x = void (forkIO x)
 -----------------------------------------------------------------------------
 -- | Helper for processing effects in the event loop.
 foldEffects
-  :: (action -> Effect parent model action)
+  :: (Show action) => (action -> Effect parent model action)
   -> Bool
   -- ^ Whether or not the Component is unmounting
   -> ComponentInfo parent
@@ -751,7 +751,8 @@ foldEffects
   -> model
   -> IO model
 foldEffects _ _ _ _ [] m = pure m
-foldEffects update drainSink info snk (e:es) o =
+foldEffects update drainSink info snk (e:es) o = do
+  FFI.consoleLog . ms $ show e
   case runEffect (update e) info o of
     (n, subs) -> do
       forM_ subs $ \(Schedule synchronicity sub) -> do
@@ -767,7 +768,7 @@ foldEffects update drainSink info snk (e:es) o =
 -----------------------------------------------------------------------------
 -- | Drains the event queue before unmounting, executed synchronously
 drain
-  :: Component parent model action
+  :: (Show action) => Component parent model action
   -> ComponentState model action
   -> IO ()
 drain app@Component{..} cs@ComponentState {..} = do
@@ -801,7 +802,7 @@ freeLifecycleHooks ComponentState {..} = do
 -----------------------------------------------------------------------------
 -- | Helper function for cleanly destroying a t'Miso.Types.Component'
 unmount
-  :: Component parent model action
+  :: (Show action) => Component parent model action
   -> ComponentState model action
   -> IO ()
 unmount app cs@ComponentState {..} = do
@@ -830,7 +831,7 @@ killSubscribers componentId =
 -- infrastructure for each sub-component. During this
 -- process we go between the Haskell heap and the JS heap.
 buildVTree
-  :: Eq model
+  :: (Eq model, Show action)
   => Events
   -> ComponentId
   -> ComponentId
