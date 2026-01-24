@@ -268,7 +268,7 @@ data View model action
 -----------------------------------------------------------------------------
 -- | Existential wrapper allowing nesting of t'Miso.Types.Component' in t'Miso.Types.Component'
 data SomeComponent parent
-   = forall model action . Eq model
+   = forall model action . (Eq model, Show action)
   => SomeComponent (Component parent model action)
 -----------------------------------------------------------------------------
 -- | t'Miso.Types.Component' mounting combinator
@@ -282,7 +282,7 @@ data SomeComponent parent
 --
 -- @since 1.9.0.0
 (+>)
-  :: forall child model action a . Eq child
+  :: forall child model action a . (Eq child, Show action)
   => MisoString
   -> Component model child action
   -> View model a
@@ -298,7 +298,7 @@ key +> vcomp = VComp [ Property "key" (toJSON key) ] (SomeComponent vcomp)
 --
 -- @since 1.9.0.0
 mount_
-  :: Eq m
+  :: (Eq m, Show a)
   => [Attribute action]
   -> Component p m a
   -> View p action
@@ -317,7 +317,7 @@ mount_ attrs vcomp = VComp attrs (SomeComponent vcomp)
 --
 -- @since 1.9.0.0
 mount
-  :: Eq m
+  :: (Eq m, Show a)
   => Component p m a
   -> View p action
 mount = mount_ []

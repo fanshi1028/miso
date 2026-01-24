@@ -133,7 +133,7 @@ import           Data.FileEmbed (embedStringFile)
 -- main :: IO ()
 -- main = run (miso (\\uri -> ..))
 -- @
-miso :: Eq model => Events -> (URI -> App model action) -> IO ()
+miso :: (Eq model, Show action) => Events -> (URI -> App model action) -> IO ()
 miso events f = withJS $ do
   vcomp <- f <$> getURI
   body <- FFI.getBody
@@ -147,15 +147,15 @@ miso events f = withJS $ do
 -- main :: IO ()
 -- main = run (startApp app)
 -- @
-startApp :: Eq model => Events -> App model action -> IO ()
+startApp :: (Eq model, Show action) => Events -> App model action -> IO ()
 startApp = startComponent
 -----------------------------------------------------------------------------
 -- | Alias for 'Miso.miso'.
-(🍜) :: Eq model => Events -> (URI -> App model action) -> IO ()
+(🍜) :: (Eq model, Show action) => Events -> (URI -> App model action) -> IO ()
 (🍜) = miso
 ----------------------------------------------------------------------------
 -- | Runs a miso application
-startComponent :: Eq model => Events -> Component ROOT model action -> IO ()
+startComponent :: (Eq model, Show action) => Events -> Component ROOT model action -> IO ()
 startComponent events vcomp = withJS (initComponent events vcomp)
 ----------------------------------------------------------------------------
 -- | Runs a 'miso' application, but with a custom rendering engine.
@@ -171,7 +171,7 @@ startComponent events vcomp = withJS (initComponent events vcomp)
 -- main = run (renderApp "my-context" app)
 -- @
 renderApp
-  :: Eq model
+  :: (Eq model, Show action)
   => Events
   -> MisoString
   -- ^ Name of the JS object that contains the drawing context
@@ -183,7 +183,7 @@ renderApp events renderer vcomp =
 ----------------------------------------------------------------------------
 -- | Top-level t'Miso.Types.Component' initialization helper for 'renderApp' and 'startComponent'.
 initComponent
-  :: (Eq parent, Eq model)
+  :: (Eq parent, Eq model, Show action)
   => Events
   -> Component parent model action
   -> IO (ComponentState model action)
