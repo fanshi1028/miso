@@ -831,7 +831,7 @@ killSubscribers componentId =
 -- infrastructure for each sub-component. During this
 -- process we go between the Haskell heap and the JS heap.
 buildVTree
-  :: (Eq model, Show action)
+  :: Eq model
   => Events
   -> ComponentId
   -> ComponentId
